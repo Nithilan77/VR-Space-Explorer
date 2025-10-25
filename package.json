@@ -1,0 +1,36 @@
+{
+  "name": "vr-space-explorer",
+  "version": "1.0.0",
+  "description": "A WebXR space exploration game compatible with Meta Quest headsets",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve": "npx serve .",
+    "build": "echo 'No build process needed for static deployment'",
+    "deploy": "echo 'Push to GitHub and enable Pages in repository settings'"
+  },
+  "keywords": [
+    "webxr",
+    "vr",
+    "meta-quest",
+    "aframe",
+    "space",
+    "game",
+    "3d",
+    "virtual-reality"
+  ],
+  "author": "VR Developer",
+  "license": "MIT",
+  "homepage": "https://github.com/username/vr-space-explorer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/vr-space-explorer.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

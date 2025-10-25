@@ -1,0 +1,15 @@
+# VR Space Explorer - GitHub Pages Deployment
+
+# Ignore development files
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+.vscode/
+.idea/
+
+# Keep source files for GitHub Pages
+!index.html
+!js/
+!assets/
+!README.md

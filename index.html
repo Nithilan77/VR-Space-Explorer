@@ -1,0 +1,463 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR Space Explorer - Meta Quest Compatible</title>
+    <meta name="description" content="An immersive VR space exploration game compatible with Meta Quest headsets">
+    
+    <!-- A-Frame for WebXR support -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <!-- A-Frame extras for enhanced components -->
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    
+    <!-- Environment component -->
+    <script src="https://unpkg.com/aframe-environment-component@1.3.1/dist/aframe-environment-component.min.js"></script>
+    
+    <!-- Hand tracking and controls -->
+    <script src="https://cdn.jsdelivr.net/gh/AdaRoseCannon/aframe-xr-boilerplate@latest/build.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: #000;
+        }
+        
+        .ui-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+        }
+        
+        .vr-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .vr-button:hover {
+            background: #005999;
+        }
+        
+        .score-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            color: #00ff00;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- UI Overlays -->
+    <div class="ui-overlay">
+        <h3>🚀 VR Space Explorer</h3>
+        <p><strong>Meta Quest Compatible</strong></p>
+        <p>Controls:</p>
+        <ul>
+            <li>Point to teleport</li>
+            <li>Grab objects with controllers</li>
+            <li>Look around to explore</li>
+            <li>Collect crystals for points!</li>
+        </ul>
+    </div>
+    
+    <div class="score-display">
+        <div>Score: <span id="score">0</span></div>
+        <div>Crystals: <span id="crystals">0</span>/10</div>
+    </div>
+    
+    <div class="controls">
+        <button class="vr-button" onclick="enterVR()">Enter VR</button>
+        <button class="vr-button" onclick="resetGame()">Reset Game</button>
+        <button class="vr-button" onclick="toggleSound()">🔊 Sound</button>
+    </div>
+
+    <!-- A-Frame Scene -->
+    <a-scene 
+        vr-mode-ui="enabled: true" 
+        background="color: #000011"
+        environment="preset: starry; groundColor: #000033"
+        inspector="url: https://aframe.io/releases/1.4.0/aframe-inspector.min.js">
+        
+        <!-- Assets -->
+        <a-assets>
+            <!-- Sounds -->
+            <audio id="backgroundMusic" src="./assets/sounds/space-ambient.mp3" preload="auto" loop></audio>
+            <audio id="collectSound" src="./assets/sounds/collect.mp3" preload="auto"></audio>
+            <audio id="teleportSound" src="./assets/sounds/teleport.mp3" preload="auto"></audio>
+            
+            <!-- Textures - Using procedural/data URI for GitHub Pages compatibility -->
+            <img id="earthTexture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cdefs%3E%3CradialGradient id='earth'%3E%3Cstop offset='0%25' stop-color='%234a90e2'/%3E%3Cstop offset='60%25' stop-color='%2350e3c2'/%3E%3Cstop offset='100%25' stop-color='%232980b9'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='128' cy='128' r='128' fill='url(%23earth)'/%3E%3C/svg%3E" crossorigin="anonymous">
+            <img id="moonTexture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cdefs%3E%3CradialGradient id='moon'%3E%3Cstop offset='0%25' stop-color='%23f5f5f5'/%3E%3Cstop offset='100%25' stop-color='%23888888'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='128' cy='128' r='128' fill='url(%23moon)'/%3E%3C/svg%3E" crossorigin="anonymous">
+            <img id="marsTexture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cdefs%3E%3CradialGradient id='mars'%3E%3Cstop offset='0%25' stop-color='%23ff6b47'/%3E%3Cstop offset='100%25' stop-color='%23cc2e1f'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='128' cy='128' r='128' fill='url(%23mars)'/%3E%3C/svg%3E" crossorigin="anonymous">
+            <img id="crystalTexture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cdefs%3E%3ClinearGradient id='crystal'%3E%3Cstop offset='0%25' stop-color='%2300ffff'/%3E%3Cstop offset='100%25' stop-color='%23ff00ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='256' height='256' fill='url(%23crystal)'/%3E%3C/svg%3E" crossorigin="anonymous">
+            
+            <!-- Models (using primitive shapes for compatibility) -->
+            <a-mixin id="crystal" 
+                geometry="primitive: octahedron; radius: 0.3" 
+                material="color: #00ffff; metalness: 0.8; roughness: 0.2; transparent: true; opacity: 0.8"
+                animation="property: rotation; to: 360 360 360; loop: true; dur: 4000">
+            </a-mixin>
+        </a-assets>
+
+        <!-- Lighting -->
+        <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
+        <a-light type="point" position="0 10 0" color="#ffffff" intensity="1.2" decay="2"></a-light>
+        <a-light type="directional" position="5 15 5" color="#ffddaa" intensity="0.8"></a-light>
+
+        <!-- Camera Rig for VR -->
+        <a-entity id="cameraRig">
+            <a-camera 
+                id="camera"
+                position="0 1.6 3"
+                look-controls-enabled="true"
+                wasd-controls-enabled="false">
+                
+                <!-- Cursor for interactions -->
+                <a-cursor 
+                    id="cursor"
+                    position="0 0 -1"
+                    geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                    material="color: white; shader: flat"
+                    animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
+                    animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 0.1 0.1 0.1; dur: 1500"
+                    raycaster="objects: .interactive"
+                    cursor="fuse: true; fuseTimeout: 1500">
+                </a-cursor>
+            </a-camera>
+
+            <!-- VR Controllers -->
+            <a-entity id="leftHand" 
+                laser-controls="hand: left; model: true"
+                raycaster="objects: .interactive; far: 10"
+                line="color: red; opacity: 0.75">
+            </a-entity>
+            
+            <a-entity id="rightHand" 
+                laser-controls="hand: right; model: true"
+                raycaster="objects: .interactive; far: 10"
+                line="color: blue; opacity: 0.75">
+            </a-entity>
+        </a-entity>
+
+        <!-- Teleportation Areas -->
+        <a-plane 
+            class="interactive teleport-area"
+            position="0 0.01 0" 
+            rotation="-90 0 0" 
+            width="50" 
+            height="50" 
+            color="#003300" 
+            opacity="0.3"
+            visible="false">
+        </a-plane>
+
+        <!-- Central Planets -->
+        <a-entity id="solarSystem" position="0 3 -10">
+            <!-- Sun (glowing center) -->
+            <a-sphere 
+                id="sun"
+                position="0 0 0"
+                radius="2"
+                color="#ffaa00"
+                material="emissive: #ff6600; emissiveIntensity: 0.5"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 20000">
+                
+                <!-- Sun glow effect -->
+                <a-sphere 
+                    radius="2.2"
+                    material="color: #ffaa00; transparent: true; opacity: 0.3"
+                    animation="property: scale; to: 1.1 1.1 1.1; dir: alternate; loop: true; dur: 2000">
+                </a-sphere>
+            </a-sphere>
+
+            <!-- Earth -->
+            <a-sphere 
+                id="earth"
+                class="interactive planet"
+                position="6 0 0"
+                radius="1"
+                src="#earthTexture"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 30000"
+                animation__orbit="property: position; to: -6 0 0; loop: true; dur: 60000; dir: alternate">
+            </a-sphere>
+
+            <!-- Mars -->
+            <a-sphere 
+                id="mars"
+                class="interactive planet"
+                position="-8 2 0"
+                radius="0.8"
+                src="#marsTexture"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 40000"
+                animation__orbit="property: position; to: 8 -2 0; loop: true; dur: 80000; dir: alternate">
+            </a-sphere>
+
+            <!-- Moon -->
+            <a-sphere 
+                id="moon"
+                class="interactive"
+                position="8 -1 2"
+                radius="0.3"
+                src="#moonTexture"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 15000">
+            </a-sphere>
+        </a-entity>
+
+        <!-- Collectible Crystals -->
+        <a-entity id="crystalField">
+            <!-- Crystal 1 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="3 2 -5"
+                data-points="100">
+            </a-entity>
+            
+            <!-- Crystal 2 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="-4 3 -7"
+                data-points="100">
+            </a-entity>
+            
+            <!-- Crystal 3 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="2 4 -12"
+                data-points="150">
+            </a-entity>
+            
+            <!-- Crystal 4 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="-6 2 -4"
+                data-points="100">
+            </a-entity>
+            
+            <!-- Crystal 5 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="8 5 -15"
+                data-points="200">
+            </a-entity>
+            
+            <!-- Crystal 6 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="-3 1 -8"
+                data-points="100">
+            </a-entity>
+            
+            <!-- Crystal 7 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="5 3 -6"
+                data-points="100">
+            </a-entity>
+            
+            <!-- Crystal 8 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="-7 4 -11"
+                data-points="150">
+            </a-entity>
+            
+            <!-- Crystal 9 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="1 6 -20"
+                data-points="250">
+            </a-entity>
+            
+            <!-- Crystal 10 -->
+            <a-entity 
+                class="interactive crystal collectible"
+                mixin="crystal"
+                position="-2 7 -25"
+                data-points="300">
+            </a-entity>
+        </a-entity>
+
+        <!-- Asteroid Field -->
+        <a-entity id="asteroids">
+            <a-dodecahedron 
+                class="interactive asteroid"
+                position="15 3 -8" 
+                radius="0.5" 
+                color="#666666"
+                animation="property: rotation; to: 360 180 90; loop: true; dur: 8000">
+            </a-dodecahedron>
+            
+            <a-icosahedron 
+                class="interactive asteroid"
+                position="-12 5 -12" 
+                radius="0.7" 
+                color="#555555"
+                animation="property: rotation; to: 180 360 270; loop: true; dur: 12000">
+            </a-icosahedron>
+            
+            <a-tetrahedron 
+                class="interactive asteroid"
+                position="10 -2 -15" 
+                radius="0.4" 
+                color="#777777"
+                animation="property: rotation; to: 270 90 360; loop: true; dur: 6000">
+            </a-tetrahedron>
+        </a-entity>
+
+        <!-- Space Station -->
+        <a-entity id="spaceStation" position="0 8 -30">
+            <!-- Main hub -->
+            <a-cylinder 
+                class="interactive"
+                radius="3" 
+                height="2" 
+                color="#cccccc"
+                metalness="0.8"
+                roughness="0.2"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 45000">
+            </a-cylinder>
+            
+            <!-- Rotating rings -->
+            <a-torus 
+                radius="4" 
+                radius-tubular="0.2" 
+                color="#0088ff"
+                animation="property: rotation; to: 360 0 0; loop: true; dur: 8000">
+            </a-torus>
+            
+            <a-torus 
+                radius="5" 
+                radius-tubular="0.15" 
+                color="#00ff88"
+                rotation="90 0 0"
+                animation="property: rotation; to: 450 0 0; loop: true; dur: 12000">
+            </a-torus>
+        </a-entity>
+
+        <!-- Particle Effects -->
+        <a-entity id="particleEffects" position="0 10 -5">
+            <!-- Floating particles -->
+            <a-box 
+                width="0.1" height="0.1" depth="0.1" 
+                color="#ffffff" opacity="0.7"
+                animation="property: position; to: 2 12 -3; loop: true; dur: 8000; dir: alternate"
+                animation__rotation="property: rotation; to: 360 360 360; loop: true; dur: 4000">
+            </a-box>
+            
+            <a-sphere 
+                radius="0.05" 
+                color="#00ffff" opacity="0.8"
+                position="3 0 2"
+                animation="property: position; to: -3 8 -2; loop: true; dur: 6000; dir: alternate">
+            </a-sphere>
+            
+            <a-tetrahedron 
+                radius="0.08" 
+                color="#ff00ff" opacity="0.6"
+                position="-2 2 1"
+                animation="property: position; to: 4 6 -4; loop: true; dur: 10000; dir: alternate">
+            </a-tetrahedron>
+        </a-entity>
+
+        <!-- Teleportation Markers -->
+        <a-entity id="teleportMarkers">
+            <a-cylinder 
+                class="interactive teleport-point"
+                position="5 0.1 -3"
+                radius="0.8" 
+                height="0.1" 
+                color="#00ff00" 
+                opacity="0.6"
+                animation__glow="property: material.emissiveIntensity; to: 0.5; loop: true; dur: 2000; dir: alternate">
+            </a-cylinder>
+            
+            <a-cylinder 
+                class="interactive teleport-point"
+                position="-8 0.1 -10"
+                radius="0.8" 
+                height="0.1" 
+                color="#00ff00" 
+                opacity="0.6"
+                animation__glow="property: material.emissiveIntensity; to: 0.5; loop: true; dur: 2000; dir: alternate">
+            </a-cylinder>
+            
+            <a-cylinder 
+                class="interactive teleport-point"
+                position="12 0.1 -18"
+                radius="0.8" 
+                height="0.1" 
+                color="#00ff00" 
+                opacity="0.6"
+                animation__glow="property: material.emissiveIntensity; to: 0.5; loop: true; dur: 2000; dir: alternate">
+            </a-cylinder>
+        </a-entity>
+
+        <!-- Text Information -->
+        <a-text 
+            value="Welcome to VR Space Explorer!"
+            position="0 4 -2"
+            align="center"
+            color="#ffffff"
+            width="8"
+            animation="property: position; to: 0 4.5 -2; loop: true; dur: 3000; dir: alternate">
+        </a-text>
+
+        <a-text 
+            value="Meta Quest Compatible - Collect all crystals!"
+            position="0 0.5 -2"
+            align="center"
+            color="#00ffff"
+            width="6">
+        </a-text>
+    </a-scene>
+
+    <!-- Game Logic Script -->
+    <script src="./js/game.js"></script>
+    <script src="./js/vr-interactions.js"></script>
+    <script src="./js/audio-manager.js"></script>
+</body>
+</html>

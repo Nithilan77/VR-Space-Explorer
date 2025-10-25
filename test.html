@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR Space Explorer - Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-left: 10px;
+        }
+        .success { background: #27ae60; }
+        .warning { background: #f39c12; }
+        .error { background: #e74c3c; }
+        .launch-button {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 15px;
+            background: #27ae60;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .launch-button:hover {
+            background: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 VR Space Explorer</h1>
+        <h2>System Test & Launch Page</h2>
+    </div>
+    
+    <div class="test-section">
+        <h3>📋 Pre-flight Checklist</h3>
+        <div id="tests">
+            <p>🔍 Testing browser compatibility... <span id="browser-test" class="status">Testing</span></p>
+            <p>🌐 Testing WebXR support... <span id="webxr-test" class="status">Testing</span></p>
+            <p>🎮 Testing VR device availability... <span id="vr-test" class="status">Testing</span></p>
+            <p>🔊 Testing Web Audio API... <span id="audio-test" class="status">Testing</span></p>
+            <p>📱 Testing device orientation... <span id="orientation-test" class="status">Testing</span></p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🛠️ System Information</h3>
+        <div id="system-info">
+            <p><strong>Browser:</strong> <span id="browser-info">Loading...</span></p>
+            <p><strong>Platform:</strong> <span id="platform-info">Loading...</span></p>
+            <p><strong>Screen:</strong> <span id="screen-info">Loading...</span></p>
+            <p><strong>Connection:</strong> <span id="connection-info">Loading...</span></p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🎯 Recommended Settings</h3>
+        <div id="recommendations">
+            <p id="rec-browser">✅ Use Chrome 79+ or Firefox 65+ for best WebXR support</p>
+            <p id="rec-https">✅ Ensure HTTPS connection for VR features</p>
+            <p id="rec-headset">✅ Connect Meta Quest headset for full VR experience</p>
+            <p id="rec-controllers">✅ Ensure controllers are paired and charged</p>
+        </div>
+    </div>
+    
+    <a href="index.html" class="launch-button" id="launch-btn">
+        🚀 Launch VR Space Explorer
+    </a>
+    
+    <div class="test-section">
+        <h3>📖 Quick Start Guide</h3>
+        <ol>
+            <li><strong>Desktop Mode:</strong> Use mouse to look around and click to interact</li>
+            <li><strong>VR Mode:</strong> Put on your headset and click "Enter VR" button</li>
+            <li><strong>Objective:</strong> Collect all 10 crystals scattered throughout space</li>
+            <li><strong>Controls:</strong> Point and click with controllers to teleport and collect</li>
+            <li><strong>Audio:</strong> Click anywhere to enable spatial audio</li>
+        </ol>
+    </div>
+    
+    <script>
+        // Browser detection
+        function detectBrowser() {
+            const userAgent = navigator.userAgent;
+            let browserName = 'Unknown';
+            let browserVersion = 'Unknown';
+            
+            if (userAgent.indexOf('Chrome') > -1) {
+                browserName = 'Chrome';
+                browserVersion = userAgent.match(/Chrome\/([0-9]+)/)[1];
+            } else if (userAgent.indexOf('Firefox') > -1) {
+                browserName = 'Firefox';
+                browserVersion = userAgent.match(/Firefox\/([0-9]+)/)[1];
+            } else if (userAgent.indexOf('Safari') > -1) {
+                browserName = 'Safari';
+                browserVersion = userAgent.match(/Version\/([0-9]+)/)[1];
+            } else if (userAgent.indexOf('Edge') > -1) {
+                browserName = 'Edge';
+                browserVersion = userAgent.match(/Edge\/([0-9]+)/)[1];
+            }
+            
+            return { name: browserName, version: browserVersion };
+        }
+        
+        // WebXR detection
+        async function testWebXR() {
+            if ('xr' in navigator) {
+                try {
+                    const isSupported = await navigator.xr.isSessionSupported('immersive-vr');
+                    return isSupported;
+                } catch (error) {
+                    return false;
+                }
+            }
+            return false;
+        }
+        
+        // Audio API detection
+        function testAudio() {
+            return !!(window.AudioContext || window.webkitAudioContext);
+        }
+        
+        // Device orientation detection
+        function testOrientation() {
+            return 'DeviceOrientationEvent' in window;
+        }
+        
+        // Update test results
+        function updateTestResult(elementId, passed, message = '') {
+            const element = document.getElementById(elementId);
+            if (passed) {
+                element.className = 'status success';
+                element.textContent = '✅ ' + (message || 'Supported');
+            } else {
+                element.className = 'status warning';
+                element.textContent = '⚠️ ' + (message || 'Limited');
+            }
+        }
+        
+        // Run tests
+        async function runTests() {
+            // Browser test
+            const browser = detectBrowser();
+            const browserGood = (browser.name === 'Chrome' && parseInt(browser.version) >= 79) ||
+                               (browser.name === 'Firefox' && parseInt(browser.version) >= 65) ||
+                               (browser.name === 'Edge' && parseInt(browser.version) >= 79);
+            updateTestResult('browser-test', browserGood, browserGood ? 'Compatible' : 'May have issues');
+            
+            // WebXR test
+            const webxrSupported = await testWebXR();
+            updateTestResult('webxr-test', webxrSupported, webxrSupported ? 'Full VR' : 'Desktop only');
+            
+            // VR device test
+            if ('getVRDisplays' in navigator) {
+                navigator.getVRDisplays().then(displays => {
+                    updateTestResult('vr-test', displays.length > 0, displays.length > 0 ? 'Device found' : 'None detected');
+                });
+            } else {
+                updateTestResult('vr-test', false, 'Not available');
+            }
+            
+            // Audio test
+            const audioSupported = testAudio();
+            updateTestResult('audio-test', audioSupported);
+            
+            // Orientation test
+            const orientationSupported = testOrientation();
+            updateTestResult('orientation-test', orientationSupported);
+        }
+        
+        // Update system info
+        function updateSystemInfo() {
+            const browser = detectBrowser();
+            document.getElementById('browser-info').textContent = `${browser.name} ${browser.version}`;
+            document.getElementById('platform-info').textContent = navigator.platform;
+            document.getElementById('screen-info').textContent = `${screen.width}x${screen.height}`;
+            
+            // Connection info
+            if ('connection' in navigator) {
+                const conn = navigator.connection;
+                document.getElementById('connection-info').textContent = `${conn.effectiveType || 'Unknown'} (${conn.downlink || '?'}Mbps)`;
+            } else {
+                document.getElementById('connection-info').textContent = 'Unknown';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSystemInfo();
+            runTests();
+            
+            // Check if HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                document.getElementById('rec-https').innerHTML = '⚠️ HTTPS required for WebXR features';
+                document.getElementById('rec-https').style.color = '#f39c12';
+            }
+        });
+    </script>
+</body>
+</html>
